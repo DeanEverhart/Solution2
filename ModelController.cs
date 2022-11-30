@@ -20,21 +20,36 @@ namespace Project.Controllers
         }
 
         //GET: Model
-        public async Task<IActionResult> Index(string sortOrder, string searchString)
+
+        public async Task<IActionResult> Index(string sortOrder, string currentFilter, string searchString, int? pageNumber)
+
+        // ********************* Previous **************************
+
+        //public async Task<IActionResult> Index(string sortOrder, string searchString)
 
         {
             ViewData["Text"] = String.IsNullOrEmpty(sortOrder) ? "text_desc" : "";
             ViewData["Number"] = sortOrder == "Number" ? "number_desc" : "Number";
             ViewData["CurrentFilter"] = searchString;
+            ViewData["CurrentSort"] = sortOrder;
 
+            if (searchString != null)
+            {
+                pageNumber = 1;
+            }
+            else
+            {
+                searchString = currentFilter;
+            }
 
-            var models = from s in _context.Model
+            var models = from s in _context.Models
                            select s;
 
             if (!String.IsNullOrEmpty(searchString))
             {
-                models = models.Where(s => s.Text.Contains(searchString)
-                                        /* || s.Number.Contains(searchString)*/);
+                models = models.Where(s => s.Text.Contains(searchString));
+
+                                     // || s.Number.Contains(searchString)
             }
 
             switch (sortOrder)
@@ -52,25 +67,33 @@ namespace Project.Controllers
                     models = models.OrderBy(s => s.Text);
                     break;
             }
-            return View(await models.AsNoTracking().ToListAsync());
+
+            int pageSize = 3;
+            return View(await PaginatedList<Model>.CreateAsync(models.AsNoTracking(), pageNumber ?? 1, pageSize));
+
+            // **************** Previous *******************
+            //
+            //return View(await models.AsNoTracking().ToListAsync());
+
+            // **************** Previous *******************
+            //
+            //public async Task<IActionResult> Index()
+            //{
+            //    return View(await _context.Model.ToListAsync());
+            //}      
         }
 
-        // **************** Previous *******************
 
-        //public async Task<IActionResult> Index()
-        //{
-        //    return View(await _context.Model.ToListAsync());
-        //}
 
         // GET: Model/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null || _context.Model == null)
+            if (id == null || _context.Models == null)
             {
                 return NotFound();
             }
 
-            var model = await _context.Model
+            var model = await _context.Models
                 .FirstOrDefaultAsync(m => m.ID == id);
             if (model == null)
             {
@@ -105,12 +128,12 @@ namespace Project.Controllers
         // GET: Model/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null || _context.Model == null)
+            if (id == null || _context.Models == null)
             {
                 return NotFound();
             }
 
-            var model = await _context.Model.FindAsync(id);
+            var model = await _context.Models.FindAsync(id);
             if (model == null)
             {
                 return NotFound();
@@ -156,12 +179,12 @@ namespace Project.Controllers
         // GET: Model/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null || _context.Model == null)
+            if (id == null || _context.Models == null)
             {
                 return NotFound();
             }
 
-            var model = await _context.Model
+            var model = await _context.Models
                 .FirstOrDefaultAsync(m => m.ID == id);
             if (model == null)
             {
@@ -176,14 +199,14 @@ namespace Project.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (_context.Model == null)
+            if (_context.Models == null)
             {
                 return Problem("Entity set 'ProjectContext.Model'  is null.");
             }
-            var model = await _context.Model.FindAsync(id);
+            var model = await _context.Models.FindAsync(id);
             if (model != null)
             {
-                _context.Model.Remove(model);
+                _context.Models.Remove(model);
             }
             
             await _context.SaveChangesAsync();
@@ -192,7 +215,7 @@ namespace Project.Controllers
 
         private bool ModelExists(int id)
         {
-          return _context.Model.Any(e => e.ID == id);
+          return _context.Models.Any(e => e.ID == id);
         }
     }
 }
